@@ -1,0 +1,118 @@
+{{ header }}{{ column_left }}
+<div id="content">
+    <div class="page-header">
+        <div class="container-fluid">
+            <div class="float-end">
+
+            </div>
+            <h1>{{ heading_title }}</h1>
+            <ol class="breadcrumb">
+                {% for breadcrumb in breadcrumbs %}
+                    <li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+                {% endfor %}
+            </ol>
+        </div>
+    </div>
+    <div id="migrate-data" class="container-fluid">
+        <div class="card">
+            <div class="card-header"></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover border-primary">
+                        <thead>
+                            <tr>
+                                <td class="text-start">{{column_tb}}</td>
+                                <td class="text-start">{{column_type}}</td>
+                                <td class="text-start">{{column_content}}</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in migrate_data">
+                                <td v-text="item.tb_name" :class="getClassByType(item.type)"></td>
+                                <td v-text="item.type" :class="getClassByType(item.type)"></td>
+                                <td v-if="item.type == 0" :class="getClassByType(item.type)">
+                                    <ul class="list-group" style="list-style-type: none" >
+                                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold" v-text="item.tb_name"></div>
+                                                <p class="mb-1" v-html="item.sql"></p>
+                                            </div>
+                                            <span v-html="getBadgeByType(item.type)"></span>
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td v-else :class="getClassByType(item.type)">
+                                    <ol class="list-group list-group-numbered" v-if="item.data" v-bind:id="item.id">
+                                        <li class="list-group-item d-flex justify-content-between align-items-start" v-for="child in item.data">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold" v-text="child.name"></div>
+                                                <p class="mb-1" v-html="child.sql"></p>
+                                            </div>
+                                            <span v-html="getBadgeByType(child.type)"></span>
+                                        </li>
+                                    </ol>
+
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="https://unpkg.com/vue@3"></script>
+<script>
+    const {
+        createApp
+    } = Vue
+    createApp({
+        data() {
+            return {
+                migrate_data : []
+            }
+        },
+        methods:{
+            getMigrateData:function () {
+                const obj = this
+                $.ajax({
+                    type: "POST",
+                    url : 'index.php?route=tool/migrate|getListMigrate&user_token={{ user_token }}',
+                    data: {},
+                    encode: true
+                }).done(function(data) {
+                    obj.migrate_data = data
+                    console.log(data)
+                }).fail(function(msg) {
+                    console.log(msg)
+                })
+            },
+            getBadgeByType:function (type) {
+                if(type == 0 || type == 1){
+                    return '<span class="badge bg-success rounded-pill">Add</span>'
+                }
+                else if(type == 2 || type == 4) {
+                    return '<span class="badge bg-primary rounded-pill">Edit</span>'
+                }
+                else {
+                    return '<span class="badge bg-warning rounded-pill">Edit Key</span>'
+                }
+            },
+            getClassByType:function (type) {
+                if(type == 0 || type == 1){
+                    return "table-success"
+                }
+                else if(type == 2 || type == 4) {
+                    return "table-primary"
+                }
+                else {
+                    return "table-warning"
+                }
+            }
+        },
+        mounted(){
+            this.getMigrateData()
+        }
+    }).mount('#migrate-data')
+</script>
+{{ footer }}
